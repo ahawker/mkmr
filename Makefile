@@ -50,7 +50,7 @@ ifeq ($(filter $(MKMR_DEFAULT_GOAL),$(MKMR_GOALS)),)
 $(info ==> [$(MKMR_PREFIX)] Include path=$(shell $(REALPATH) $(MKMR_VARS_FILE)))
 endif
 include $(MKMR_VARS_FILE)
-export $(shell grep -v '^\#' $(MKMR_VARS_FILE) | sed 's/[?: ]=.*//')
+export $(shell $(GREP) -v '^\#' $(MKMR_VARS_FILE) | $(SED) 's/[?: ]=.*//')
 endif
 
 # References for tracking 'root' state (initial location of invocation).
