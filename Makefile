@@ -21,6 +21,7 @@ HEAD     ?= head
 PRINTF   ?= printf
 PWD_     ?= pwd
 REALPATH ?= realpath
+SED      ?= sed
 SHELL    ?= $(SHELL)
 SORT     ?= sort
 XARGS    ?= xargs
