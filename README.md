@@ -26,7 +26,7 @@ ls -la "${MKMR_DST}/Makefile"
 Once installed, you'll need to `include` it in your repository `Makefile`.
 
 ```makefile
-include $(git rev-parse --show-toplevel)/.mkmr/Makefile
+include $(shell git rev-parse --show-toplevel)/.mkmr/Makefile
 
 .PHONY: build
 build: mkmr-package ; @ ## Build packages
