@@ -7,7 +7,7 @@
 In this example, we'll install into a `.mkmr` directory in the root if your current git repository.
 
 ```bash
-MKMR_VERSION=0.0.4
+MKMR_VERSION=0.0.5
 MKMR_INSTALL_PATH=$(git rev-parse --show-toplevel)/.mkmr
 
 # Download specific version and extract into destination.
