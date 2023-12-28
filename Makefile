@@ -36,7 +36,7 @@ MKMR_MAKEFILES    := $(MAKEFILE_LIST)
 
 # "Constants" but available for customization in rare cases.
 export MKMR_INSTALL_PATH      ?= $(shell git rev-parse --show-toplevel)/.mkmr
-export MKMR_VERSION           ?= $(shell cat VERSION)
+export MKMR_VERSION           ?= 0.0.4
 MKMR_PREFIX                   ?= mkmr
 MKMR_MAKE_FILE                ?= Makefile
 MKMR_VARS_FILE                ?= Makefile.vars
