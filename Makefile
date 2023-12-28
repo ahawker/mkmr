@@ -94,7 +94,7 @@ define MKMR_TMPL_PACKAGE
 .PHONY: $(MKMR_PREFIX)-package-$(1)
 $(MKMR_PREFIX)-package-$(1):
 	@$(ECHO) "==> [$(MKMR_PREFIX)] Execute goals=[$(MKMR_GOALS)] package=$(1) context=$(MKMR_CURRENT_NAME)"
-	$(MAKE) -C $(MKMR_ROOT_CHILDREN_PATH)/$(1) $(MKMR_GOALS)
+	@$(MAKE) -C $(MKMR_ROOT_CHILDREN_PATH)/$(1) $(MKMR_GOALS)
 endef
 
 # Dynamically create targets for each known child Makefile of the current context that
