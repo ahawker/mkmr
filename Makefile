@@ -2,9 +2,10 @@
 #
 # Make based command executor for simple monorepos.
 #
+# License: https://github.com/ahawker/mkmr/blob/main/LICENSE
 # Source: https://github.com/ahawker/mkmr
 # Issues: https://github.com/ahawker/mkmr/issues
-
+# Version: 0.0.1
 .SUFFIXES:
 .DEFAULT_GOAL ?= help
 
