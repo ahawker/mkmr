@@ -1,0 +1,2 @@
+# mkmr
+Makefile based monorepos
