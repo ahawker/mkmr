@@ -5,25 +5,27 @@
 # License: https://github.com/ahawker/mkmr/blob/main/LICENSE
 # Source: https://github.com/ahawker/mkmr
 # Issues: https://github.com/ahawker/mkmr/issues
-# Version: 0.0.1
 .SUFFIXES:
 .DEFAULT_GOAL ?= help
 
 # Binaries.
 AWK      ?= awk
 BASENAME ?= basename
+CURL     ?= curl
 DIRNAME  ?= dirname
 ECHO     ?= echo
 ENV      ?= env
 FIND     ?= find
 GREP     ?= grep
 HEAD     ?= head
+MKDIR    ?= mkdir
 PRINTF   ?= printf
 PWD_     ?= pwd
 REALPATH ?= realpath
 SED      ?= sed
 SHELL    ?= $(SHELL)
 SORT     ?= sort
+TAR      ?= tar
 XARGS    ?= xargs
 
 # References to 'make' state.
@@ -33,6 +35,8 @@ MKMR_LEVEL        := $(MAKELEVEL)
 MKMR_MAKEFILES    := $(MAKEFILE_LIST)
 
 # "Constants" but available for customization in rare cases.
+export MKMR_INSTALL_PATH      ?= $(shell git rev-parse --show-toplevel)/.mkmr
+export MKMR_VERSION           ?= $(shell cat VERSION)
 MKMR_PREFIX                   ?= mkmr
 MKMR_MAKE_FILE                ?= Makefile
 MKMR_VARS_FILE                ?= Makefile.vars
@@ -206,6 +210,12 @@ $(MKMR_PACKAGE_TARGET_NAME): $(MKMR_PACKAGES:%=$(MKMR_PREFIX)-package-%)
 help: ## Show help/usage.
 	@$(GREP) -E $(MKMR_HELP_REGEX) $(MKMR_CURRENT_MAKE) | $(SORT) -u | $(GREP) -Ev "$(MKMR_PACKAGE_TARGET_NAME)" | $(AWK) 'BEGIN {FS = $(MKMR_HELP_AWK_FS)}; {$(PRINTF) "\033[36m%-40s\033[0m $(MKMR_DEFAULT_TARGET_NAME)     | %s\n", $$1, $$2}'
 	@$(GREP) -E $(MKMR_HELP_REGEX) $(MKMR_CURRENT_MAKE) | $(SORT) -u | $(GREP) -E  "$(MKMR_PACKAGE_TARGET_NAME)" | $(AWK) 'BEGIN {FS = $(MKMR_HELP_AWK_FS)}; {$(PRINTF) "\033[36m%-40s\033[0m $(MKMR_PACKAGE_TARGET_NAME) | %s\n", $$1, $$2}'
+
+.PHONY: $(MKMR_PREFIX)-installer
+$(MKMR_PREFIX)-installer: ## Install/update 'mkmr'.
+	$(MKDIR) -p "${MKMR_INSTALL_PATH}" && \
+	$(CURL) -sL "https://github.com/ahawker/mkmr/archive/refs/tags/v${MKMR_VERSION}.tar.gz" | \
+		$(TAR) --strip-components=1 -xz -C "${MKMR_INSTALL_PATH}" "mkmr-${MKMR_VERSION}/Makefile"
 
 # Set MKMR_DEBUG=1 to view all the helpful variables/context.
 ifdef MKMR_DEBUG
