@@ -204,7 +204,7 @@ $(MKMR_PACKAGE_TARGET_NAME): $(MKMR_PACKAGES:%=$(MKMR_PREFIX)-package-%)
 
 .PHONY: help
 help: ## Show help/usage.
-	@$(GREP) -E $(MKMR_HELP_REGEX) $(MKMR_CURRENT_MAKE) | $(SORT) -u | $(GREP) -Ev "$(MKMR_PACKAGE_TARGET_NAME)" | $(AWK) 'BEGIN {FS = $(MKMR_HELP_AWK_FS)}; {$(PRINTF) "\033[36m%-40s\033[0m $(MKMR_DEFAULT_TARGET_NAME)    | %s\n", $$1, $$2}'
+	@$(GREP) -E $(MKMR_HELP_REGEX) $(MKMR_CURRENT_MAKE) | $(SORT) -u | $(GREP) -Ev "$(MKMR_PACKAGE_TARGET_NAME)" | $(AWK) 'BEGIN {FS = $(MKMR_HELP_AWK_FS)}; {$(PRINTF) "\033[36m%-40s\033[0m $(MKMR_DEFAULT_TARGET_NAME)     | %s\n", $$1, $$2}'
 	@$(GREP) -E $(MKMR_HELP_REGEX) $(MKMR_CURRENT_MAKE) | $(SORT) -u | $(GREP) -E  "$(MKMR_PACKAGE_TARGET_NAME)" | $(AWK) 'BEGIN {FS = $(MKMR_HELP_AWK_FS)}; {$(PRINTF) "\033[36m%-40s\033[0m $(MKMR_PACKAGE_TARGET_NAME) | %s\n", $$1, $$2}'
 
 # Set MKMR_DEBUG=1 to view all the helpful variables/context.
