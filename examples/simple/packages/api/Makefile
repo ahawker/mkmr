@@ -1,7 +1,9 @@
 #!/usr/bin/env make
 
 export MKMR_DEPENDENCIES = protos
-include $(shell git rev-parse --show-toplevel)/.mkmr/Makefile
+ifdef MKMR_INSTALL_PATH
+include $(MKMR_INSTALL_PATH)
+endif
 
 clean:
 	@sleep 1
