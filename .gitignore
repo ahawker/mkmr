@@ -1,2 +1,5 @@
 # Jetbrains IDE's
 .idea/
+
+# mkmr local install
+.mkmr/
