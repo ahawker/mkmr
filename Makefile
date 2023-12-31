@@ -29,14 +29,14 @@ TAR      ?= tar
 XARGS    ?= xargs
 
 # References to 'make' state.
-MKMR_DEFAULT_GOAL := $(.DEFAULT_GOAL)
-MKMR_GOALS        := $(MAKECMDGOALS)
-MKMR_LEVEL        := $(MAKELEVEL)
-MKMR_MAKEFILES    := $(MAKEFILE_LIST)
+MKMR_DEFAULT_GOAL = $(.DEFAULT_GOAL)
+MKMR_GOALS        = $(MAKECMDGOALS)
+MKMR_LEVEL        = $(MAKELEVEL)
+MKMR_MAKEFILES    = $(MAKEFILE_LIST)
 
 # "Constants" but available for customization in rare cases.
 export MKMR_INSTALL_PATH      ?= $(shell git rev-parse --show-toplevel)/.mkmr
-export MKMR_VERSION           ?= 0.0.5
+export MKMR_VERSION           ?= 0.0.6
 MKMR_PREFIX                   ?= mkmr
 MKMR_MAKE_FILE                ?= Makefile
 MKMR_VARS_FILE                ?= Makefile.vars
@@ -46,7 +46,8 @@ MKMR_PACKAGE_TARGET_NAME      ?= $(MKMR_PREFIX)-package
 MKMR_PROXY_TARGET_NAME        ?= $(MKMR_PREFIX)-proxy
 MKMR_CHILD_TARGET_NAME        ?= $(MKMR_PREFIX)-child
 MKMR_DEPENDENCIES_TARGET_NAME ?= $(MKMR_PREFIX)-dependencies
-MKMR_HELP_REGEX               ?= '^[%a-zA-Z0-9/_-]+:.*?\#\# .*$$'
+MKMR_TARGET_REGEX             ?= '^[%a-zA-Z0-9/_-]+:'
+MKMR_HELP_REGEX               ?= '$(MKMR_TARGET_REGEX).*?\#\# .*$$'
 MKMR_HELP_AWK_FS              ?= ":.*?\#\# "
 
 # Load user-defined variables/customizations.
@@ -59,33 +60,41 @@ export $(shell $(GREP) -v '^\#' $(MKMR_VARS_FILE) | $(SED) 's/[?: ]=.*//')
 endif
 
 # References for tracking 'root' state (initial location of invocation).
-export MKMR_ROOT_PATH            ?= $(shell $(PWD_))
-export MKMR_ROOT_MAKE            ?= $(shell $(REALPATH) $(firstword $(MAKEFILE_LIST)))
-export MKMR_ROOT_NAME            ?= $(shell $(BASENAME) $(MKMR_ROOT_PATH))
-export MKMR_ROOT_CHILDREN_PATH   ?= $(MKMR_ROOT_PATH)/$(MKMR_PACKAGES_DIR)
-export MKMR_ROOT_PACKAGE_TARGETS ?= $(shell $(GREP) -E $(MKMR_HELP_REGEX) $(MKMR_ROOT_MAKE) | $(GREP) -E "$(MKMR_PACKAGE_TARGET_NAME)" | $(AWK) 'BEGIN {FS = $(MKMR_HELP_AWK_FS)}; {$(PRINTF) "%s\n", $$1}')
-export MKMR_ROOT_PACKAGES        ?= $(sort $(shell $(FIND) $(MKMR_ROOT_CHILDREN_PATH) -type f -depth 2 -name $(MKMR_MAKE_FILE) -exec $(SHELL) -c "$(DIRNAME) {} | $(XARGS) $(BASENAME)" \; 2>/dev/null))
+export MKMR_ROOT_PATH             ?= $(shell $(PWD_))
+export MKMR_ROOT_MAKE             ?= $(shell $(REALPATH) $(firstword $(MAKEFILE_LIST)))
+export MKMR_ROOT_NAME             ?= $(shell $(BASENAME) $(MKMR_ROOT_PATH))
+export MKMR_ROOT_CHILDREN_PATH    ?= $(MKMR_ROOT_PATH)/$(MKMR_PACKAGES_DIR)
+export MKMR_ROOT_STANDARD_TARGETS ?= $(shell $(GREP) -E $(MKMR_TARGET_REGEX) $(MKMR_ROOT_MAKE) | $(GREP) -vE "$(MKMR_PREFIX)" | $(AWK) 'BEGIN {FS = $(MKMR_HELP_AWK_FS)}; {$(PRINTF) "%s\n", $$1}')
+export MKMR_ROOT_MKMR_TARGETS     ?= $(shell $(GREP) -E $(MKMR_TARGET_REGEX) $(MKMR_ROOT_MAKE) | $(GREP) -E "$(MKMR_PREFIX)" | $(AWK) 'BEGIN {FS = $(MKMR_HELP_AWK_FS)}; {$(PRINTF) "%s\n", $$1}')
+export MKMR_ROOT_PACKAGES         ?= $(sort $(shell $(FIND) $(MKMR_ROOT_CHILDREN_PATH) -type f -depth 2 -name $(MKMR_MAKE_FILE) -exec $(SHELL) -c "$(DIRNAME) {} | $(XARGS) $(BASENAME)" \; 2>/dev/null))
 
 # User parameters.
+MKMR_PACKAGE      ?=
 MKMR_PACKAGES     ?= $(MKMR_ROOT_PACKAGES)
 MKMR_DEPENDENCIES ?=
+unexport MKMR_PACKAGE
 unexport MKMR_PACKAGES
 unexport MKMR_DEPENDENCIES
 
 # References for tracking 'current' and 'child' state based on execution context (package, dependency, etc).
 MKMR_CURRENT_MAKE := $(shell $(REALPATH) $(firstword $(MAKEFILE_LIST)))
 MKMR_CURRENT_PATH := $(shell $(DIRNAME) $(MKMR_CURRENT_MAKE))
-ifeq ($(MKMR_LEVEL),0) # root
-MKMR_CURRENT_NAME   = $(MKMR_ROOT_NAME)
-MKMR_CHILDREN_DIR   = $(MKMR_PACKAGES_DIR)
-MKMR_CHILDREN_PATH  = $(MKMR_CURRENT_PATH)/$(MKMR_CHILDREN_DIR)
-MKMR_CHILDREN       = $(MKMR_ROOT_PACKAGES)
-else # package/child
-MKMR_CURRENT_NAME   = $(patsubst $(MKMR_ROOT_PATH)/$(MKMR_PACKAGES_DIR)/%,%,$(MKMR_CURRENT_PATH))
-MKMR_CHILDREN_DIR   =
-MKMR_CHILDREN_PATH  = $(MKMR_CURRENT_PATH)
-MKMR_CHILDREN       = $(sort $(patsubst $(MKMR_CHILDREN_PATH)/%,%,$(shell $(FIND) $(MKMR_CHILDREN_PATH) -type f -mindepth 2 -name $(MKMR_MAKE_FILE) -exec $(SHELL) -c "$(DIRNAME) {}" \; 2>/dev/null)))
+ifeq ($(MKMR_LEVEL),0) # Root Makefile
+MKMR_CURRENT_NAME             = $(MKMR_ROOT_NAME)
+MKMR_CURRENT_STANDARD_TARGETS = $(MKMR_ROOT_STANDARD_TARGETS)
+MKMR_CURRENT_MKMR_TARGETS     = $(MKMR_ROOT_MKMR_TARGETS)
+MKMR_CHILDREN_DIR             = $(MKMR_PACKAGES_DIR)
+MKMR_CHILDREN_PATH            = $(MKMR_CURRENT_PATH)/$(MKMR_CHILDREN_DIR)
+MKMR_CHILDREN                 = $(MKMR_ROOT_PACKAGES)
+else # Package/child Makefile
+MKMR_CURRENT_NAME             = $(patsubst $(MKMR_ROOT_PATH)/$(MKMR_PACKAGES_DIR)/%,%,$(MKMR_CURRENT_PATH))
+MKMR_CURRENT_STANDARD_TARGETS = $(shell $(GREP) -E $(MKMR_TARGET_REGEX) $(MKMR_CURRENT_MAKE) | $(GREP) -vE "$(MKMR_PREFIX)" | $(AWK) 'BEGIN {FS = $(MKMR_HELP_AWK_FS)}; {$(PRINTF) "%s\n", $$1}')
+MKMR_CURRENT_MKMR_TARGETS     = $(shell $(GREP) -E $(MKMR_TARGET_REGEX) $(MKMR_CURRENT_MAKE) | $(GREP) -E "$(MKMR_PREFIX)" | $(AWK) 'BEGIN {FS = $(MKMR_HELP_AWK_FS)}; {$(PRINTF) "%s\n", $$1}')
+MKMR_CHILDREN_DIR             =
+MKMR_CHILDREN_PATH            = $(MKMR_CURRENT_PATH)
+MKMR_CHILDREN                 = $(sort $(patsubst $(MKMR_CHILDREN_PATH)/%,%,$(shell $(FIND) $(MKMR_CHILDREN_PATH) -type f -mindepth 2 -name $(MKMR_MAKE_FILE) -exec $(SHELL) -c "$(DIRNAME) {}" \; 2>/dev/null)))
 endif
+MKMR_CURRENT_MISSING_TARGETS  = $(filter-out $(MKMR_CURRENT_STANDARD_TARGETS) $(MKMR_CURRENT_MKMR_TARGETS) $(MKMR_DEFAULT_GOAL),$(MKMR_GOALS))
 
 # Dynamically create targets for each known package of the current context. These
 # will be used for root packages and calling necessary cross-package dependencies.
@@ -99,7 +108,9 @@ endif
 define MKMR_TMPL_PACKAGE
 .PHONY: $(MKMR_PREFIX)-package-$(1)
 $(MKMR_PREFIX)-package-$(1):
-	@$(ECHO) "==> [$(MKMR_PREFIX)] Execute goals=[$(MKMR_GOALS)] package=$(1) context=$(MKMR_CURRENT_NAME)"
+ifdef MKMR_TRACE
+	@$(ECHO) "==> [$(MKMR_PREFIX)] Traverse goals=$(MKMR_GOALS) current=$(MKMR_CURRENT_NAME) next=$(1)"
+endif
 	@$(MAKE) -C $(MKMR_ROOT_CHILDREN_PATH)/$(1) $(MKMR_GOALS)
 endef
 
@@ -115,12 +126,14 @@ endef
 define MKMR_TMPL_CHILD
 .PHONY: $(MKMR_PREFIX)-child-$(1)
 $(MKMR_PREFIX)-child-$(1):
-	@$(ECHO) "==> [$(MKMR_PREFIX)] Execute goals=[$(patsubst $(1)/%,%,$(MKMR_GOALS))] child=$(1) context=$(MKMR_CURRENT_NAME)"
+ifdef MKMR_TRACE
+	@$(ECHO) "==> [$(MKMR_PREFIX)] Traverse goals=$(patsubst $(1)/%,%,$(MKMR_GOALS)) current=$(MKMR_CURRENT_NAME) next=$(1)"
+endif
 	@$(MAKE) -C $(MKMR_CHILDREN_PATH)/$(1) $(patsubst $(1)/%,%,$(MKMR_GOALS))
 endef
 
-# Dynamically create no-op targets for all known package targets defined in the project root
-# Makefile. This allows make to "silently" resolve the targets w/o warnings and users may define
+# Dynamically create no-op targets for all necessary values.
+# This allows make to "silently" resolve the targets w/o warnings and users may define
 # the targets with an "opt-in" strategy.
 #
 # Example:
@@ -132,23 +145,33 @@ endef
 # .PHONY: clean
 # clean: mkmr-proxy mkmr-default-clean
 #
-# TODO (ahawker) Should this use 'mkmr-proxy' or 'mkmr-dependencies' as prerequisite?
-define MKMR_TMPL_PACKAGE_TARGET
+#
+# @1 - Name of target
+# @2 - Name of prerequisite
+define MKMR_TMPL_DYNAMIC_TARGET
 .PHONY: $(MKMR_PREFIX)-default-$(1)
 $(MKMR_PREFIX)-default-$(1):
+ifdef MKMR_TRACE
+	@$(ECHO) "==> [$(MKMR_PREFIX)] Execute goal=$(1) current=$(MKMR_CURRENT_NAME)"
+endif
 	@true
 
+ifdef MKMR_TRACE
+$(info ==> [$(MKMR_PREFIX)] Create dynamic target "$(1): $(2) $(MKMR_PREFIX)-default-$(1)")
+endif
+
 .PHONY: $(1)
-$(1): $(MKMR_PROXY_TARGET_NAME) $(MKMR_PREFIX)-default-$(1)
+$(1): $(2) $(MKMR_PREFIX)-default-$(1)
 endef
 
 # Create all dynamic targets.
-ifeq ($(MKMR_LEVEL),0) # root
-$(foreach package,$(MKMR_CHILDREN),$(eval $(call MKMR_TMPL_PACKAGE,$(package))))
-else # package/child
+ifeq ($(MKMR_LEVEL),0) # Root Makefile
+$(foreach package,$(MKMR_PACKAGES),$(eval $(call MKMR_TMPL_PACKAGE,$(package))))
+$(foreach target,$(MKMR_CURRENT_MISSING_TARGETS),$(eval $(call MKMR_TMPL_DYNAMIC_TARGET,$(target),$(MKMR_PACKAGE_TARGET_NAME))))
+else # Package/child Makefile
+$(foreach package,$(MKMR_PACKAGES),$(eval $(call MKMR_TMPL_PACKAGE,$(package))))
 $(foreach child,$(MKMR_CHILDREN),$(eval $(call MKMR_TMPL_CHILD,$(child))))
-$(foreach dependency,$(MKMR_DEPENDENCIES),$(eval $(call MKMR_TMPL_PACKAGE,$(dependency))))
-$(foreach target,$(MKMR_ROOT_PACKAGE_TARGETS),$(eval $(call MKMR_TMPL_PACKAGE_TARGET,$(target))))
+$(foreach target,$(MKMR_CURRENT_MISSING_TARGETS),$(eval $(call MKMR_TMPL_DYNAMIC_TARGET,$(target),$(MKMR_PROXY_TARGET_NAME))))
 endif
 
 # 'mkmr-child' target added to user-defined targets as prerequisite to identify them as
@@ -162,7 +185,7 @@ endif
 # .PHONY: build/container/%
 # build/container/%: mkmr-child ## Run container commands.
 #
-$(MKMR_CHILD_TARGET_NAME): $(MKMR_CHILDREN:%=mkmr-child-%)
+$(MKMR_CHILD_TARGET_NAME): $(MKMR_CHILDREN:%=$(MKMR_PREFIX)-child-%)
 
 # 'mkmr-dependencies' target added to user-defined targets as prerequisite to identify them as
 # targets that should call all dependencies prior to executing the target.
@@ -203,8 +226,13 @@ $(MKMR_PROXY_TARGET_NAME): $(MKMR_DEPENDENCIES_TARGET_NAME) $(MKMR_CHILD_TARGET_
 # .PHONY: build
 # build: mkmr-package ## Build package.
 #
+ifdef MKMR_PACKAGE
+.PHONY: $(MKMR_PACKAGE_TARGET_NAME)
+$(MKMR_PACKAGE_TARGET_NAME): $(MKMR_PREFIX)-package-$(MKMR_PACKAGE)
+else
 .PHONY: $(MKMR_PACKAGE_TARGET_NAME)
 $(MKMR_PACKAGE_TARGET_NAME): $(MKMR_PACKAGES:%=$(MKMR_PREFIX)-package-%)
+endif
 
 .PHONY: help
 help: ## Show help/usage.

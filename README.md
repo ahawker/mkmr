@@ -7,7 +7,7 @@
 In this example, we'll install into a `.mkmr` directory in the root if your current git repository.
 
 ```bash
-MKMR_VERSION=0.0.5
+MKMR_VERSION=0.0.6
 MKMR_INSTALL_PATH=$(git rev-parse --show-toplevel)/.mkmr
 
 # Download specific version and extract into destination.
@@ -26,7 +26,9 @@ your local copy to the latest version.
 Once installed, you'll need to `include` it in your repository `Makefile`.
 
 ```makefile
-include $(shell git rev-parse --show-toplevel)/.mkmr/Makefile
+# Makefile
+export MKMR_INSTALL_PATH=$(shell git rev-parse --show-toplevel)/.mkmr/Makefile
+include $(MKMR_INSTALL_PATH)
 
 .PHONY: build
 build: mkmr-package ; @ ## Build packages
@@ -34,6 +36,17 @@ build: mkmr-package ; @ ## Build packages
 .PHONY: changelog
 changelog: ## Rebuild CHANGELOG.md
     @echo 'TODO'
+```
+
+```makefile
+# packages/example/Makefile
+
+ifdef MKMR_INSTALL_PATH
+include $(MKMR_INSTALL_PATH)
+endif
+
+build:
+    @docker build ...
 ```
 
 ## Examples
